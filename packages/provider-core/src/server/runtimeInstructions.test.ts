@@ -14,6 +14,24 @@ describe("buildRuntimeInstructions", () => {
     assert.notInclude(instructions, "<pull_request_linking>");
   });
 
+  it("teaches task markers to every harness, with or without PR linking", () => {
+    for (const pullRequestLinking of [true, false]) {
+      const instructions = buildRuntimeInstructions({ harness: "Codex", pullRequestLinking });
+      assert.include(instructions, '<t3-task id="ID">TEXT</t3-task>');
+      assert.include(instructions, '<t3-task-brief id="ID">');
+      assert.include(instructions, "reuses one ID");
+    }
+  });
+
+  it("omits task markers when disabled, keeping the rest", () => {
+    const instructions = buildRuntimeInstructions({ harness: "Codex", taskMarkers: false });
+    assert.notInclude(instructions, "<task_markers>");
+    assert.notInclude(instructions, "t3-task");
+    assert.include(instructions, "<runtime_info>");
+    assert.include(instructions, "<pull_request_linking>");
+    assert.notInclude(instructions, "\n\n\n");
+  });
+
   it("links PRs the agent creates, takes over, or pushes to, and no others", () => {
     const instructions = buildRuntimeInstructions({ harness: "Codex" });
 
