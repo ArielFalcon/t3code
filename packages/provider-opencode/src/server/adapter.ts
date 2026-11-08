@@ -265,6 +265,7 @@ interface ActiveOpenCodeTurn {
   readonly rootNodeId: ProviderAdapter.ProviderAdapterV2TurnInput["rootNodeId"];
   readonly appThread: OrchestrationV2AppThread;
   readonly modelSelection: ModelSelection;
+  readonly taskMarkers?: boolean | undefined;
   readonly runtimePolicy: ProviderAdapter.ProviderAdapterV2RuntimePolicy;
   readonly providerTurnId: OrchestrationV2ProviderTurn["id"];
   readonly providerThreadId: OrchestrationV2ProviderTurn["providerThreadId"];
@@ -2242,6 +2243,7 @@ export const makeOpenCodeAdapterV2 = Effect.fn("makeOpenCodeAdapterV2")(function
             rootNodeId,
             appThread: state.appThread,
             modelSelection: state.appThread.modelSelection,
+            taskMarkers: state.parentSubagent.parentTurn.taskMarkers,
             runtimePolicy: state.parentSubagent.parentTurn.runtimePolicy,
             providerTurnId,
             providerThreadId: providerTurn.providerThreadId,
@@ -2965,7 +2967,11 @@ export const makeOpenCodeAdapterV2 = Effect.fn("makeOpenCodeAdapterV2")(function
             ...(variant === undefined ? {} : { variant }),
             system: [
               orchestrationSystemPrompt,
-              buildRuntimeInstructions({ harness: "OpenCode", model: turn.modelSelection.model }),
+              buildRuntimeInstructions({
+                harness: "OpenCode",
+                model: turn.modelSelection.model,
+                taskMarkers: turn.taskMarkers,
+              }),
             ]
               .filter(Boolean)
               .join("\n\n"),
@@ -3226,6 +3232,7 @@ export const makeOpenCodeAdapterV2 = Effect.fn("makeOpenCodeAdapterV2")(function
                 rootNodeId: turnInput.rootNodeId,
                 appThread: turnInput.appThread,
                 modelSelection: turnInput.modelSelection,
+                taskMarkers: turnInput.taskMarkers,
                 runtimePolicy: turnInput.runtimePolicy,
                 providerTurnId,
                 providerThreadId: turnInput.providerThread.id,

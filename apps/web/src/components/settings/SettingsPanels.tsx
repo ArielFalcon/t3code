@@ -499,6 +499,9 @@ export function useSettingsRestore(onRestored?: () => void) {
     ...(settings.snoozeLimitedThreads !== DEFAULT_UNIFIED_SETTINGS.snoozeLimitedThreads
       ? ["Snooze until limits reset"]
       : []),
+    ...(settings.taskMarkersEnabled !== DEFAULT_UNIFIED_SETTINGS.taskMarkersEnabled
+      ? ["Task markers"]
+      : []),
     ...(!Equal.equals(settings.snoozePresets, DEFAULT_UNIFIED_SETTINGS.snoozePresets)
       ? ["Snooze options"]
       : []),
@@ -657,6 +660,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       sidebarAutoSettleOnMerge: DEFAULT_UNIFIED_SETTINGS.sidebarAutoSettleOnMerge,
       autoResumeLimitedThreads: DEFAULT_UNIFIED_SETTINGS.autoResumeLimitedThreads,
       snoozeLimitedThreads: DEFAULT_UNIFIED_SETTINGS.snoozeLimitedThreads,
+      taskMarkersEnabled: DEFAULT_UNIFIED_SETTINGS.taskMarkersEnabled,
       snoozePresets: DEFAULT_UNIFIED_SETTINGS.snoozePresets,
       responseStreamingMode: DEFAULT_UNIFIED_SETTINGS.responseStreamingMode,
       enableProviderUpdateChecks: DEFAULT_UNIFIED_SETTINGS.enableProviderUpdateChecks,
@@ -1653,6 +1657,37 @@ export function ThreadsSettingsPanel() {
                 updateSettings({ snoozeLimitedThreads: Boolean(checked) })
               }
               aria-label="Snooze until limits reset"
+            />
+          }
+        />
+      </SettingsSection>
+
+      <SettingsSection id="agent-behavior" title="Agent behavior">
+        <SettingsRow
+          serverScoped
+          {...searchableSetting("task-markers")}
+          description="Agents mark the tasks they propose so you can run each one as its own thread."
+          settingKeys={["taskMarkersEnabled"]}
+          resetAction={
+            settings.taskMarkersEnabled !== DEFAULT_UNIFIED_SETTINGS.taskMarkersEnabled ? (
+              <SettingResetButton
+                label="task markers"
+                onClick={() =>
+                  updateSettings({
+                    taskMarkersEnabled: DEFAULT_UNIFIED_SETTINGS.taskMarkersEnabled,
+                  })
+                }
+              />
+            ) : null
+          }
+          control={
+            <ScopedSwitch
+              settingKeys={["taskMarkersEnabled"]}
+              checked={settings.taskMarkersEnabled}
+              onCheckedChange={(checked) =>
+                updateSettings({ taskMarkersEnabled: Boolean(checked) })
+              }
+              aria-label="Task markers"
             />
           }
         />

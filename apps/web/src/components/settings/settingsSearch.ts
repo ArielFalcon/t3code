@@ -443,6 +443,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["usage quota rate limit reset wake recover continue"],
   },
   {
+    id: "task-markers",
+    title: "Task markers",
+    to: "/settings/threads",
+    searchTerms: ["agent proposed follow-up tasks run as thread t3-task brief"],
+  },
+  {
     id: "auto-resume-limited-threads",
     title: "Resume after usage limits",
     to: "/settings/threads",

@@ -394,6 +394,19 @@ function ServerSettingsDetail(props: { readonly page: SettingsPage }) {
                     onValueChange={(value) => write({ enableAgentBrowserAccess: value })}
                   />
                 </SettingsSection>
+                <SettingsSection title="Agent behavior">
+                  <SettingsSwitchRow
+                    icon="checkmark.circle"
+                    label="Task markers"
+                    subtitle={managedSubtitle(
+                      "taskMarkersEnabled",
+                      "Agents mark the tasks they propose so you can run each one as its own thread.",
+                    )}
+                    value={uniform("taskMarkersEnabled")}
+                    disabled={disabledFor("taskMarkersEnabled")}
+                    onValueChange={(value) => write({ taskMarkersEnabled: value })}
+                  />
+                </SettingsSection>
                 <AutoSettleSettingsRows write={write} pending={pendingWrites > 0} />
               </>
             ) : null}
