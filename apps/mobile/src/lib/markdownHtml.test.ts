@@ -14,6 +14,16 @@ import { ENRICHED_INLINE_FILE_LINK_REGEX } from "./enrichedLinkPresentation";
 import { EnvironmentId, ThreadId } from "@t3tools/contracts";
 import { parseMarkdown } from "react-native-enriched-markdown/src/web/parseMarkdown";
 
+describe("task briefs in native Markdown", () => {
+  it("removes a brief block, body included, and keeps the visible reply", () => {
+    const markdown =
+      'Do <t3-task id="a">it</t3-task>.\n\n<t3-task-brief id="a">\nGoal.\n\n- one\n</t3-task-brief>';
+    const rendered = markdownForNativeRendering(markdown, ENRICHED_INLINE_FILE_LINK_REGEX);
+    expect(rendered).toContain("Do");
+    expect(rendered).not.toMatch(/Goal|one|brief/);
+  });
+});
+
 describe("HTML in native Markdown", () => {
   it("preserves screenshot URLs and captions from GitHub HTML image embeds", () => {
     expect(

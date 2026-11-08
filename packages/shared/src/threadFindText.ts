@@ -117,7 +117,7 @@ function markdownThreadFindText(
     : lineBreaks
       ? assistantBreaksProcessor
       : assistantProcessor;
-  const tree = processor.runSync(processor.parse(markdown));
+  const tree = processor.runSync(processor.parse(markdown), markdown);
   const paths = [
     ...extractMarkdownLinkHrefs(renderCodexInlineDirectivesAsMarkdown(markdown)),
     ...extractInlineCodeSpans(markdown).flatMap((span) => inlineCodeFilePathCandidate(span) ?? []),

@@ -117,3 +117,17 @@ it("indexes the citation chip label instead of its link text", () => {
     "my note",
   ]);
 });
+
+it("indexes task marker text without the tags", () => {
+  expect(assistantSegments('Next: <t3-task id="a">fix the bug</t3-task> soon')).toEqual([
+    "Next: fix the bug soon",
+  ]);
+});
+
+it("leaves task briefs out of the indexed text", () => {
+  expect(
+    assistantSegments(
+      'Next: <t3-task id="a">fix</t3-task>\n\n<t3-task-brief id="a">\nsecret\n\n- one\n</t3-task-brief>',
+    ),
+  ).toEqual(["Next: fix"]);
+});

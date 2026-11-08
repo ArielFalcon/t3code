@@ -4,6 +4,7 @@ import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import { remarkKeepWindowsProsePaths } from "@t3tools/shared/markdownWindowsPaths";
 import { isWindowsAbsolutePath } from "@t3tools/shared/path";
+import { stripT3TaskBriefs } from "@t3tools/shared/taskMarkers";
 
 const parser = unified().use(remarkParse).use(remarkGfm).use(remarkKeepWindowsProsePaths);
 export type MarkdownNode = Root | RootContent;
@@ -431,7 +432,8 @@ function markdownWithWindowsPathDestinations(markdown: string): string {
 
 // HTML wrappers can expose Markdown that wasn't in the first AST, so normalize them first.
 export function markdownForNativeParsing(markdown: string): string {
-  return markdownWithWindowsPathDestinations(markdownWithHtml(markdown));
+  // Task briefs are hidden prose for the agent that runs the task; the tags alone would not hide the body.
+  return markdownWithWindowsPathDestinations(markdownWithHtml(stripT3TaskBriefs(markdown)));
 }
 
 export function parseMarkdownDocument(markdown: string): Root {
