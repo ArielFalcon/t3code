@@ -7,9 +7,11 @@ import {
   AuthOrchestrationOperateScope,
   type EnvironmentId,
   type MessageId,
+  type ModelSelection,
   type ScopedThreadRef,
   type ThreadId,
   type RunId,
+  type RuntimeMode,
 } from "@t3tools/contracts";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { useNavigate } from "@tanstack/react-router";
@@ -20,7 +22,8 @@ import {
 import { readLocalApi } from "../../localApi";
 import { findRevertCheckpoint } from "../../session-logic";
 import { type ChatMessage } from "../../types";
-import { newThreadId } from "~/lib/utils";
+import { newMessageId, newThreadId } from "~/lib/utils";
+import { deriveThreadTitleSeed } from "@t3tools/client-runtime/operations";
 import { buildThreadRouteParams } from "../../threadRoutes";
 import { useComposerDraftStore } from "../../composerDraftStore";
 import { threadEnvironment } from "../../state/threads";
@@ -87,6 +90,10 @@ export function useTimelineRewind(input: TimelineRewindInput) {
     reportFailure: false,
   });
   const forkThreadFromRun = useAtomCommand(threadEnvironment.forkFromRun, {
+    reportFailure: false,
+  });
+
+  const startThreadTurn = useOrchestrationCommand(threadEnvironment.startTurn, {
     reportFailure: false,
   });
 
@@ -171,11 +178,12 @@ export function useTimelineRewind(input: TimelineRewindInput) {
   };
   const onConfirmRevertStable = useStableCallback(onConfirmRevert);
 
-  const onForkFromRun = async (input: {
+  /** Resolves with the fork once this client has it, null when interrupted; throws on failure. */
+  const forkRun = async (input: {
     readonly sourceThreadId: ThreadId;
     readonly runId: RunId;
-  }) => {
-    if (!activeThread || activeEnvironmentUnavailable) return;
+  }): Promise<ScopedThreadRef | null> => {
+    if (!activeThread || activeEnvironmentUnavailable) return null;
     const targetThreadId = newThreadId();
     const targetThreadRef = scopeThreadRef(environmentId, targetThreadId);
     const result = await forkThreadFromRun({
@@ -188,28 +196,65 @@ export function useTimelineRewind(input: TimelineRewindInput) {
       },
     });
     if (result._tag === "Failure") {
-      if (!isAtomCommandInterrupted(result)) {
-        const error = squashAtomCommandFailure(result);
-        setThreadError(
-          activeThread.id,
-          error instanceof Error ? error.message : "Failed to fork this response.",
-        );
-      }
-      return;
+      if (isAtomCommandInterrupted(result)) return null;
+      const error = squashAtomCommandFailure(result);
+      throw new Error(error instanceof Error ? error.message : "Failed to fork this response.");
     }
-    const targetThreadReady = await waitForThreadShell(targetThreadRef);
-    if (!targetThreadReady) {
-      setThreadError(
-        activeThread.id,
+    if (!(await waitForThreadShell(targetThreadRef))) {
+      throw new Error(
         "The fork was created, but its thread data did not reach this client. Reconnect and try opening it from the sidebar.",
       );
-      return;
     }
-    await navigate({
-      to: "/$environmentId/$threadId",
-      params: buildThreadRouteParams(targetThreadRef),
-    });
+    return targetThreadRef;
   };
+
+  const onForkFromRun = async (input: {
+    readonly sourceThreadId: ThreadId;
+    readonly runId: RunId;
+  }) => {
+    if (!activeThread) return;
+    try {
+      const targetThreadRef = await forkRun(input);
+      if (targetThreadRef === null) return;
+      await navigate({
+        to: "/$environmentId/$threadId",
+        params: buildThreadRouteParams(targetThreadRef),
+      });
+    } catch (error) {
+      setThreadError(activeThread.id, error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  /** Forks from the run and starts the fork's first turn in the background; throws on failure. */
+  const onRunTaskInFork = async (input: {
+    readonly sourceThreadId: ThreadId;
+    readonly runId: RunId;
+    readonly prompt: string;
+    readonly modelSelection: ModelSelection;
+    readonly runtimeMode: RuntimeMode;
+  }): Promise<ThreadId | null> => {
+    const targetThreadRef = await forkRun(input);
+    if (targetThreadRef === null || !activeThread) return null;
+    const turn = await startThreadTurn({
+      environmentId,
+      input: {
+        threadId: targetThreadRef.threadId,
+        message: { messageId: newMessageId(), role: "user", text: input.prompt, attachments: [] },
+        modelSelection: input.modelSelection,
+        titleSeed: deriveThreadTitleSeed({ text: input.prompt, attachments: [] }),
+        runtimeMode: input.runtimeMode,
+        interactionMode: activeThread.interactionMode,
+        createdAt: new Date().toISOString(),
+      },
+    });
+    if (turn._tag === "Failure") {
+      if (isAtomCommandInterrupted(turn)) return null;
+      const error = squashAtomCommandFailure(turn);
+      throw new Error(error instanceof Error ? error.message : "Failed to start the forked task.");
+    }
+    return targetThreadRef.threadId;
+  };
+  const onRunTaskInForkStable = useStableCallback(onRunTaskInFork);
   const onForkFromRunStable = useStableCallback(onForkFromRun);
   const onRevertTimelineTurn = (targetTurnCount: number, messageId: MessageId) => {
     void onRevertToTurnCountStable(targetTurnCount, messageId);
@@ -218,6 +263,7 @@ export function useTimelineRewind(input: TimelineRewindInput) {
   return {
     onConfirmRevertStable,
     onForkFromRunStable,
+    onRunTaskInForkStable,
     onRevertTimelineTurnStable,
   };
 }

@@ -54,6 +54,18 @@ describe("resolveAssistantMessageCopyState", () => {
   });
 });
 
+describe("resolveAssistantMessageCopyState task markers", () => {
+  it("copies marked tasks without their tags", () => {
+    expect(
+      resolveAssistantMessageCopyState({
+        showCopyButton: true,
+        text: 'Next: <t3-task id="a">fix the bug</t3-task>',
+        streaming: false,
+      }).text,
+    ).toBe("Next: fix the bug");
+  });
+});
+
 describe("deriveMessagesTimelineRows", () => {
   it.each(["alone", "before tool", "before commentary and tool"])(
     "keeps an unfinished task update static %s",

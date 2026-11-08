@@ -13,6 +13,7 @@ import { checkpointFileTotals } from "@t3tools/client-runtime/state/thread-check
 import { ChangedFilesCard } from "./ChangedFilesTree";
 import { useFileContextMenuHandler } from "../../fileContextMenu";
 import { useAssistantMessageText, useProject, useThreadShell } from "../../state/entities";
+import { TaskMarkerMessageProvider } from "./TaskMarkers";
 import { MessageCopyButton } from "./MessageCopyButton";
 import { AssistantCitationSource } from "./AssistantCitationSource";
 import { resolveAssistantMessageCopyState } from "./MessagesTimeline.logic";
@@ -38,7 +39,7 @@ export function AssistantTimelineRow({ row }: { row: Extract<TimelineRow, { kind
     <>
       <div className="relative min-w-0 px-1 py-0.5">
         <MessageAuthorHeading>T3 Code</MessageAuthorHeading>
-        <div data-thread-find-text="true">
+        <div data-thread-find-text="true" data-t3-task-root="true">
           <AssistantCitationSource
             messageId={row.message.id}
             {...(ctx.threadRef ? { threadRef: ctx.threadRef } : {})}
@@ -46,18 +47,30 @@ export function AssistantTimelineRow({ row }: { row: Extract<TimelineRow, { kind
             request={ctx.citationRequest}
             listRef={ctx.listRef}
           >
-            <ChatMarkdown
-              text={messageText}
-              cwd={ctx.markdownCwd}
-              threadRef={ctx.threadRef ?? undefined}
-              isStreaming={Boolean(row.message.streaming)}
-              lineBreaks={shouldPreserveAssistantLineBreaks(messageText)}
-              skills={ctx.skills}
-              headingLevelOffset={MESSAGE_HEADING_LEVEL}
-              onUseArtifactTemplate={ctx.onUseArtifactTemplate}
-              onRunShellCommand={ctx.onRunShellCommand}
-              onImageExpand={ctx.onImageExpand}
-            />
+            <TaskMarkerMessageProvider
+              value={
+                row.projectedItem
+                  ? {
+                      text: messageText,
+                      streaming: Boolean(row.message.streaming),
+                      projectedItem: row.projectedItem,
+                    }
+                  : null
+              }
+            >
+              <ChatMarkdown
+                text={messageText}
+                cwd={ctx.markdownCwd}
+                threadRef={ctx.threadRef ?? undefined}
+                isStreaming={Boolean(row.message.streaming)}
+                lineBreaks={shouldPreserveAssistantLineBreaks(messageText)}
+                skills={ctx.skills}
+                headingLevelOffset={MESSAGE_HEADING_LEVEL}
+                onUseArtifactTemplate={ctx.onUseArtifactTemplate}
+                onRunShellCommand={ctx.onRunShellCommand}
+                onImageExpand={ctx.onImageExpand}
+              />
+            </TaskMarkerMessageProvider>
           </AssistantCitationSource>
         </div>
         {ctx.onOpenTurnDiff ? (

@@ -7,11 +7,13 @@ import type {
 import {
   type EnvironmentId,
   type MessageId,
+  type ModelSelection,
   type OrchestrationV2TurnItem,
   type RunAttemptId,
   type ScopedThreadRef,
   type ServerProviderSkill,
   type RunId,
+  type RuntimeMode,
   ThreadId,
   type TurnItemId,
 } from "@t3tools/contracts";
@@ -83,6 +85,16 @@ export interface TimelineRowSharedState {
   /** Absent hides "Fork from this response", as in the guest view. */
   onForkFromRun:
     | ((input: { readonly sourceThreadId: ThreadId; readonly runId: RunId }) => Promise<void>)
+    | undefined;
+  /** Forks from a run and starts its first turn in the background; absent where forks are. */
+  onRunTaskInFork:
+    | ((input: {
+        readonly sourceThreadId: ThreadId;
+        readonly runId: RunId;
+        readonly prompt: string;
+        readonly modelSelection: ModelSelection;
+        readonly runtimeMode: RuntimeMode;
+      }) => Promise<ThreadId | null>)
     | undefined;
   onToggleTurnFold: (runId: RunId) => void;
   onToggleAttemptFold: (attemptId: RunAttemptId) => void;

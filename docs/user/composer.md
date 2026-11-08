@@ -143,6 +143,20 @@ The quoted text and comment count toward the message limit.
 Mobile displays saved quotes and comments, but does not create citations or
 navigate to their sources.
 
+## Run a proposed task
+
+When an agent proposes follow-up work, it marks each task in its reply. On web and desktop, a
+marked task is underlined; hovering it highlights every part of the task. Select it to choose a
+model, add optional instructions, and run it in the background as a new thread in a new worktree,
+a new thread in the current checkout, or a sub-thread forked from the reply. The agent also writes
+a hidden brief for each task, which becomes the new thread's first message.
+
+A new worktree starts from the branch tip, so edits you have not committed are not in it. Commit
+them first, or run the task in the current checkout.
+
+To stop agents from marking tasks, turn off **Settings → Task markers**. Mobile shows marked tasks
+as plain text.
+
 ## Recall a sent prompt
 
 Press `ArrowUp` in an empty composer to bring back the last prompt you sent in this thread. Press

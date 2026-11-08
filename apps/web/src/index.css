@@ -659,6 +659,16 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   margin-left: var(--live-activity-focus-width);
 }
 
+/* A task that fills its whole block lights the block: soft tint with a rounded contour. */
+[data-t3-task-root] [data-task-block-active] {
+  border-radius: var(--radius-md);
+  background-color: color-mix(in oklab, var(--primary) 12%, transparent);
+  box-shadow: 0 0 0 0.25rem color-mix(in oklab, var(--primary) 12%, transparent);
+  transition:
+    background-color 150ms,
+    box-shadow 150ms;
+}
+
 @property --assistant-citation-highlight-opacity {
   syntax: "<number>";
   inherits: true;

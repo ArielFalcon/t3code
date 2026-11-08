@@ -19,6 +19,11 @@ import {
   CHAT_MARKDOWN_REMARK_PLUGINS_WITH_BREAKS,
   CHAT_MARKDOWN_REHYPE_PLUGINS,
 } from "@t3tools/shared/markdownPipeline";
+import {
+  isT3TaskId,
+  T3_TASK_HAST_PROPERTY,
+  withStreamingT3TaskMarkers,
+} from "@t3tools/shared/taskMarkers";
 import { useAtomValue } from "@effect/atom-react";
 import {
   COMPOSER_CONTEXT_CLIPBOARD_MIME,
@@ -220,6 +225,7 @@ import {
   nodeToPlainText,
 } from "./chat/MarkdownCodeBlock.logic";
 import { reportMarkdownActionFailure } from "./chat/markdownActionFailure";
+import { TaskMarkerFragment } from "./chat/TaskMarkers";
 
 const isAssetNotFoundError = Schema.is(AssetWorkspaceAssetNotFoundError);
 
@@ -965,6 +971,13 @@ const CHAT_MARKDOWN_COMPONENTS = {
   h4: markdownHeadingRenderer(4),
   h5: markdownHeadingRenderer(5),
   h6: markdownHeadingRenderer(6),
+  span: function MarkdownSpan({ node, children, ...props }) {
+    const taskId = node?.properties?.[T3_TASK_HAST_PROPERTY];
+    if (typeof taskId !== "string") return <span {...props}>{children}</span>;
+    // Raw HTML can carry the attribute too; an id the marker syntax cannot produce stays plain text.
+    if (!isT3TaskId(taskId)) return <>{children}</>;
+    return <TaskMarkerFragment id={taskId}>{children}</TaskMarkerFragment>;
+  },
   div: function MarkdownDiv({ node, children, ...props }) {
     const { onUseArtifactTemplate } = use(ChatMarkdownRendererContext);
     const artifactTemplate = artifactTemplateFromHastProperties(node?.properties);
@@ -1759,9 +1772,12 @@ function ChatMarkdown({
     ];
   // The incremental parser keeps per-instance state, so its output is not shared.
   const uncachedPlugins = incrementalParsing;
+  const messagePlugins = props.isStreaming
+    ? withStreamingT3TaskMarkers(sharedRemarkPlugins)
+    : sharedRemarkPlugins;
   const remarkPlugins = incrementalParsing
-    ? [...sharedRemarkPlugins, ...extraRemarkPlugins, createIncrementalMarkdownPlugin()]
-    : withExtraPlugins(sharedRemarkPlugins, extraRemarkPlugins);
+    ? [...messagePlugins, ...extraRemarkPlugins, createIncrementalMarkdownPlugin()]
+    : withExtraPlugins(messagePlugins, extraRemarkPlugins);
   const blocks = streamingBlocks ?? [text];
 
   return (
